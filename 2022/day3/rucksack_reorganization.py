@@ -64,7 +64,7 @@
 import sys
 
 sys.path.append('.')
-from util import make_input_iterator
+from util import get_input
 
 def find_shared(rucksack):
     mid = len(rucksack) // 2
@@ -114,10 +114,7 @@ def part2(rucksacks):
     return total_priorities
 
 if __name__ == '__main__':
-    rucksacks = list(map(
-        lambda x: x.strip(),
-        list(make_input_iterator('2022/day3/input.txt'))
-    ))
+    rucksacks = get_input('2022/day3/input.txt')
 
     print(f'part 1: {part1(rucksacks)}')
     print(f'part 2: {part2(rucksacks)}')

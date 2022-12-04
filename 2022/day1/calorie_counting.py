@@ -51,13 +51,13 @@
 import sys
 
 sys.path.append('.')
-from util import make_input_iterator
+from util import get_input
 
 def get_calories_per_elf(foods):
     elves = []
     elf = 0
     for food in foods:
-        if food == '\n':
+        if not food:
             elves.append(elf)
             elf = 0
         else:
@@ -74,7 +74,7 @@ def part2(foods):
     return sum(sorted_elves[-3:])
 
 if __name__ == '__main__':
-    foods = list(make_input_iterator('./2022/day1/input.txt'))
+    foods = get_input('2022/day1/input.txt')
     
     print(f'part 1: {part1(foods)}')
     print(f'part 2: {part2(foods)}')

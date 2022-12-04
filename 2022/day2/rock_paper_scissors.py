@@ -45,7 +45,7 @@
 import sys
 
 sys.path.append('.')
-from util import make_input_iterator
+from util import get_input
 
 def play(a, b):
     score = 0
@@ -95,7 +95,7 @@ def part2(turns):
     return total_score
 
 if __name__ == '__main__':
-    turns = list(make_input_iterator('./2022/day2/input.txt'))
+    turns = get_input('2022/day2/input.txt')
 
     print(f'part 1: {part1(turns)}')
     print(f'part 2: {part2(turns)}')

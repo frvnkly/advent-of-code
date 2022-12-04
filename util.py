@@ -1,4 +1,6 @@
-def make_input_iterator(filename):
+def get_input(filename):
+    lines = []
     with open(filename, 'r') as file:
-        for line in file: yield line
+        for line in file: lines.append(line.strip())
         file.close()
+    return lines
