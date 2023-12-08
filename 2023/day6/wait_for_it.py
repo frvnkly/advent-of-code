@@ -77,7 +77,14 @@ def part1(times, distances):
 
     return answer
 
+def part2(times, distances):
+    time = int("".join(map(str, times)))
+    distance = int("".join(map(str, distances)))
+
+    return len(get_winning_holds(time, distance))
+
 if __name__ == "__main__":
     times, distances = get_races()
 
     print(f"part 1: {part1(times, distances)}")
+    print(f"part 2: {part2(times, distances)}")
