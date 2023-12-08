@@ -54,6 +54,30 @@
 
 # Find the rank of every hand in your set. What are the total winnings?
 
+# --- Part Two ---
+
+# To make things a little more interesting, the Elf introduces one additional rule. Now, J cards are jokers - wildcards that can act like whatever card would make the hand the strongest type possible.
+
+# To balance this, J cards are now the weakest individual cards, weaker even than 2. The other cards stay in the same order: A, K, Q, T, 9, 8, 7, 6, 5, 4, 3, 2, J.
+
+# J cards can pretend to be whatever card is best for the purpose of determining hand type; for example, QJJQ2 is now considered four of a kind. However, for the purpose of breaking ties between two hands of the same type, J is always treated as J, not the card it's pretending to be: JKKK2 is weaker than QQQQ2 because J is weaker than Q.
+
+# Now, the above example goes very differently:
+
+# 32T3K 765
+# T55J5 684
+# KK677 28
+# KTJJT 220
+# QQQJA 483
+
+# 32T3K is still the only one pair; it doesn't contain any jokers, so its strength doesn't increase.
+# KK677 is now the only two pair, making it the second-weakest hand.
+# T55J5, KTJJT, and QQQJA are now all four of a kind! T55J5 gets rank 3, QQQJA gets rank 4, and KTJJT gets rank 5.
+
+# With the new joker rule, the total winnings in this example are 5905.
+
+# Using the new joker rule, find the rank of every hand in your set. What are the new total winnings?
+
 
 import sys
 from collections import Counter
@@ -63,6 +87,9 @@ from util import get_input
 
 CARD_LABELS = [
     "2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K", "A"
+]
+ALTERNATE_CARD_LABELS = [
+    "J", "2", "3", "4", "5", "6", "7", "8", "9", "T", "Q", "K", "A"
 ]
 
 def get_hands_and_bids():
@@ -75,9 +102,25 @@ def get_hands_and_bids():
 
     return hands, bids
 
-def get_hand_type(hand):
+def get_hand_combo_counts(hand, with_jokers=False):
     counts = Counter(hand)
-    combo_counts = Counter(counts.values())
+
+    if with_jokers:
+        jokers = counts.get("J", 0)
+        counts["J"] = 0
+
+        combo_counts = Counter(counts.values())
+        highest = max(combo_counts.keys())
+        new_highest = highest + jokers
+        combo_counts[highest] -= 1
+        combo_counts[new_highest] = combo_counts.get(new_highest, 0) + 1
+    else:
+        combo_counts = Counter(counts.values())
+
+    return combo_counts
+
+def get_hand_type(hand, with_jokers=False):
+    combo_counts = get_hand_combo_counts(hand, with_jokers)
 
     if combo_counts.get(1) == 5: return 0
     if combo_counts.get(2) == 1 and combo_counts.get(1) == 3: return 1
@@ -87,24 +130,34 @@ def get_hand_type(hand):
     if combo_counts.get(4) == 1 and combo_counts.get(1) == 1: return 5
     if combo_counts.get(5) == 1: return 6
 
-def serialize_hand(hand):
-    hand_type = get_hand_type(hand)
-    return [hand_type] + list(map(lambda x: CARD_LABELS.index(x), list(hand)))
+def serialize_hand(hand, with_jokers=False):
+    hand_type = get_hand_type(hand, with_jokers)
+    labels = ALTERNATE_CARD_LABELS if with_jokers else CARD_LABELS
+    return [hand_type] + list(map(lambda x: labels.index(x), list(hand)))
 
-def deserialize_hand(serialized_hand):
-    return "".join(map(lambda x: CARD_LABELS[x], serialized_hand[1:]))
+def deserialize_hand(serialized_hand, with_jokers=False):
+    labels = ALTERNATE_CARD_LABELS if with_jokers else CARD_LABELS
+    return "".join(map(lambda x: labels[x], serialized_hand[1:]))
 
-def rank_hands(hands):
-    serialized_hands = list(map(serialize_hand, hands))
+def rank_hands(hands, with_jokers=False):
+    serialized_hands = list(map(
+        lambda x: serialize_hand(x, with_jokers),
+        hands
+    ))
+
     serialized_hands.sort()
-    return list(map(deserialize_hand, serialized_hands))
+    
+    return list(map(
+        lambda x: deserialize_hand(x, with_jokers),
+        serialized_hands
+    ))
 
-def part1(hands, bids):
+def get_total_winnings(hands, bids, with_jokers=False):
     hand_bid_lookup = {}
     for i in range(len(hands)):
         hand_bid_lookup[hands[i]] = bids[i]
 
-    ranked_hands = rank_hands(hands)
+    ranked_hands = rank_hands(hands, with_jokers)
 
     total_winnings = 0
     for i in range(len(ranked_hands)):
@@ -114,7 +167,14 @@ def part1(hands, bids):
 
     return total_winnings
 
+def part1(hands, bids):
+    return get_total_winnings(hands, bids)
+
+def part2(hands, bids):
+    return get_total_winnings(hands, bids, with_jokers=True)
+
 if __name__ == "__main__":    
     hands, bids = get_hands_and_bids()
 
     print(f"part 1: {part1(hands, bids)}")
+    print(f"part 2: {part2(hands, bids)}")
