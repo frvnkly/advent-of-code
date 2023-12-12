@@ -95,7 +95,18 @@
 
 # Expand the universe, then find the length of the shortest path between every pair of galaxies. What is the sum of these lengths?
 
+# --- Part Two ---
 
+# The galaxies are much older (and thus much farther apart) than the researcher initially estimated.
+
+# Now, instead of the expansion you did before, make each empty row or column one million times larger. That is, each empty row should be replaced with 1000000 empty rows, and each empty column should be replaced with 1000000 empty columns.
+
+# (In the example above, if each empty row or column were merely 10 times larger, the sum of the shortest paths between every pair of galaxies would be 1030. If each empty row or column were merely 100 times larger, the sum of the shortest paths between every pair of galaxies would be 8410. However, your universe will need to expand far beyond these values.)
+
+# Starting with the same initial image, expand the universe according to these new rules, then find the length of the shortest path between every pair of galaxies. What is the sum of these lengths?
+
+
+from bisect import bisect_left
 import sys
 
 sys.path.append(".")
@@ -108,12 +119,15 @@ def get_universe():
 
     return universe
 
-def expand_universe(universe):
+def get_expanded_rows(universe):
     expanded_rows = []
     for i in range(len(universe)):
         if not len(list(filter(lambda x: x == "#", universe[i]))):
             expanded_rows.append(i)
 
+    return expanded_rows
+
+def get_expanded_columns(universe):
     expanded_columns = []
     for j in range(len(universe[0])):
         is_expanded = True
@@ -121,29 +135,27 @@ def expand_universe(universe):
             if universe[i][j] == "#":
                 is_expanded = False
                 break
-        
+
         if is_expanded: expanded_columns.append(j)
 
-    expanded_universe = []
-    for i in range(len(universe)):        
-        row = []
-        for j in range(len(universe[i])):
-            row.append(universe[i][j])
-            if j in expanded_columns:
-                row.append(universe[i][j])
+    return expanded_columns
 
-        expanded_universe.append(row)
-        if i in expanded_rows:
-            expanded_universe.append(row[:])
+def get_galaxies(universe, expansion):
+    expanded_rows = get_expanded_rows(universe)
+    expanded_columns = get_expanded_columns(universe)
 
-    return expanded_universe
-    
-def get_galaxies(universe):
     galaxies = []
     for i in range(len(universe)):
-        for j in range(len(universe[i])):
-            if universe[i][j] == "#":
-                galaxies.append((i, j))
+        for j in range(len(universe)):
+            if universe[i][j] == ".":
+                continue
+
+            additional_rows = bisect_left(expanded_rows, i) * (expansion - 1)
+            additional_columns = (
+                bisect_left(expanded_columns, j) * (expansion - 1)
+            )
+
+            galaxies.append((i + additional_rows, j + additional_columns))
 
     return galaxies
 
@@ -153,9 +165,8 @@ def get_shortest_path(galaxy_a, galaxy_b):
 
     return abs(a_x - b_x) + abs(a_y - b_y)
 
-def part1(universe):
-    expanded_universe = expand_universe(universe)
-    galaxies = get_galaxies(expanded_universe)
+def get_shortest_paths_sum(universe, expansion):
+    galaxies = get_galaxies(universe, expansion)
     shortest_paths_sum = 0
     for i in range(len(galaxies) - 1):
         galaxy_a = galaxies[i]
@@ -165,7 +176,14 @@ def part1(universe):
 
     return shortest_paths_sum
 
+def part1(universe):
+    return get_shortest_paths_sum(universe, 2)
+
+def part2(universe):
+    return get_shortest_paths_sum(universe, 1000000)
+
 if __name__ == "__main__":
     universe = get_universe()
 
     print(f"part 1: {part1(universe)}")
+    print(f"part 2: {part2(universe)}")
