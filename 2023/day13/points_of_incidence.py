@@ -62,6 +62,60 @@
 
 # Find the line of reflection in each of the patterns in your notes. What number do you get after summarizing all of your notes?
 
+# --- Part Two ---
+
+# You resume walking through the valley of mirrors and - SMACK! - run directly into one. Hopefully nobody was watching, because that must have been pretty embarrassing.
+
+# Upon closer inspection, you discover that every mirror has exactly one smudge: exactly one . or # should be the opposite type.
+
+# In each pattern, you'll need to locate and fix the smudge that causes a different reflection line to be valid. (The old reflection line won't necessarily continue being valid after the smudge is fixed.)
+
+# Here's the above example again:
+
+# #.##..##.
+# ..#.##.#.
+# ##......#
+# ##......#
+# ..#.##.#.
+# ..##..##.
+# #.#.##.#.
+
+# #...##..#
+# #....#..#
+# ..##..###
+# #####.##.
+# #####.##.
+# ..##..###
+# #....#..#
+
+# The first pattern's smudge is in the top-left corner. If the top-left # were instead ., it would have a different, horizontal line of reflection:
+
+# 1 ..##..##. 1
+# 2 ..#.##.#. 2
+# 3v##......#v3
+# 4^##......#^4
+# 5 ..#.##.#. 5
+# 6 ..##..##. 6
+# 7 #.#.##.#. 7
+
+# With the smudge in the top-left corner repaired, a new horizontal line of reflection between rows 3 and 4 now exists. Row 7 has no corresponding reflected row and can be ignored, but every other row matches exactly: row 1 matches row 6, row 2 matches row 5, and row 3 matches row 4.
+
+# In the second pattern, the smudge can be fixed by changing the fifth symbol on row 2 from . to #:
+
+# 1v#...##..#v1
+# 2^#...##..#^2
+# 3 ..##..### 3
+# 4 #####.##. 4
+# 5 #####.##. 5
+# 6 ..##..### 6
+# 7 #....#..# 7
+
+# Now, the pattern has a different horizontal line of reflection between rows 1 and 2.
+
+# Summarize your notes as before, but instead use the new different reflection lines. In this example, the first pattern's new horizontal line has 3 rows above it and the second pattern's new horizontal line has 1 row above it, summarizing to the value 400.
+
+# In each pattern, fix the smudge and find the different line of reflection. What number do you get after summarizing the new reflection line in each pattern in your notes?
+
 
 import sys
 
@@ -83,72 +137,73 @@ def get_patterns():
 
     return patterns
 
-def match_rows(pattern, a, b):
-    is_match = True
+def count_smudges_horizontal(pattern, a, b):
+    smudges = 0
     for i in range(len(pattern[a])):
         if pattern[a][i] != pattern[b][i]:
-            is_match = False
-            break
+            smudges += 1
     
-    return is_match
+    return smudges
 
-def find_horizontal_split(pattern):
+def find_horizontal_split(pattern, target_smudges):
     for i in range(len(pattern) - 1):
-        is_reflection = True
+        smudges = 0
         a = i
         b = i + 1
         while a >= 0 and b < len(pattern):
-            if not match_rows(pattern, a, b):
-                is_reflection = False
-                break
+            smudges += count_smudges_horizontal(pattern, a, b)
 
             a -= 1
             b += 1
-
-        if is_reflection: return i
+        
+        if smudges == target_smudges: return i
 
     return None
 
-def match_columns(pattern, a, b):
-    is_match = True
+def count_smudges_vertical(pattern, a, b):
+    smudges = 0
     for i in range(len(pattern)):
         if pattern[i][a] != pattern[i][b]:
-            is_match = False
-            break
+            smudges += 1
 
-    return is_match
+    return smudges
 
-def find_vertical_split(pattern):
+def find_vertical_split(pattern, target_smudges):
     for i in range(len(pattern[0])):
-        is_reflection = True
+        smudges = 0
         a = i
         b = i + 1
         while a >= 0 and b < len(pattern[0]):
-            if not match_columns(pattern, a, b):
-                is_reflection = False
-                break
+            smudges += count_smudges_vertical(pattern, a, b)
 
             a -= 1
             b += 1
 
-        if is_reflection: return i
+        if smudges == target_smudges: return i
 
     return None
 
-def part1(patterns):
-    result = 0
+def summarize_pattern_notes(patterns, smudges):
+    summary = 0
     for pattern in patterns:
-        horizontal_split = find_horizontal_split(pattern)
+        horizontal_split = find_horizontal_split(pattern, smudges)
         if not horizontal_split is None:
-            result += (horizontal_split + 1) * 100
+            summary += (horizontal_split + 1) * 100
             continue
         
-        vertical_split = find_vertical_split(pattern)
-        result += vertical_split + 1
+        vertical_split = find_vertical_split(pattern, smudges)
+        summary += vertical_split + 1
 
-    return result
+    return summary
+
+def part1(patterns):
+    return summarize_pattern_notes(patterns, 0)
+
+def part2(patterns):
+    return summarize_pattern_notes(patterns, 1)
 
 if __name__ == "__main__":
     patterns = get_patterns()
 
     print(f"part 1: {part1(patterns)}")
+    print(f"part 2: {part2(patterns)}")
