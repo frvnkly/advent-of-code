@@ -73,6 +73,36 @@
 
 # For each row, count all of the different arrangements of operational and broken springs that meet the given criteria. What is the sum of those counts?
 
+# --- Part Two ---
+# As you look out at the field of springs, you feel like there are way more springs than the condition records list. When you examine the records, you discover that they were actually folded up this whole time!
+
+# To unfold the records, on each row, replace the list of spring conditions with five copies of itself (separated by ?) and replace the list of contiguous groups of damaged springs with five copies of itself (separated by ,).
+
+# So, this row:
+
+# .# 1
+
+# Would become:
+
+# .#?.#?.#?.#?.# 1,1,1,1,1
+
+# The first line of the above example would become:
+
+# ???.###????.###????.###????.###????.### 1,1,3,1,1,3,1,1,3,1,1,3,1,1,3
+
+# In the above example, after unfolding, the number of possible arrangements for some rows is now much larger:
+
+# ???.### 1,1,3 - 1 arrangement
+# .??..??...?##. 1,1,3 - 16384 arrangements
+# ?#?#?#?#?#?#?#? 1,3,1,6 - 1 arrangement
+# ????.#...#... 4,1,1 - 16 arrangements
+# ????.######..#####. 1,6,5 - 2500 arrangements
+# ?###???????? 3,2,1 - 506250 arrangements
+
+# After unfolding, adding all of the possible arrangement counts together produces 525152.
+
+# Unfold your condition records; what is the new sum of possible arrangement counts?
+
 
 import sys
 
@@ -89,50 +119,70 @@ def get_spring_records():
 
     return damaged_rows, damaged_groups
 
+def unfold_row(row, folds):
+    return "?".join([row] * folds)
+
+def unfold_groups(groups, folds):
+    return groups * folds
+
 def count_arrangements(row, groups):
-    arrangements = 0
-    stack = [(0, 0)]
-    while stack:        
-        i, j = stack.pop()
+    memo = {}
+    def memoize(fn):
+        def inner(i, j):
+            if not (i, j) in memo:
+                memo[(i, j)] = fn(i, j)
+            return memo[(i, j)]
+        return inner        
 
+    @memoize
+    def recurse(i, j):
         if j >= len(groups):
-            if not "#" in row[i:]:
-                arrangements += 1
-            continue
-
+            return 0 if "#" in row[i:] else 1
+        
         if i + groups[j] > len(row):
-            continue
+            return 0
+        
+        segment = row[i:i+groups[j]]
 
-        if row[i] == "#":
+        if segment[0] == "#":
             if (
-                not "." in row[i:i+groups[j]] and
+                not "." in segment and
                 (i + groups[j] == len(row) or row[i+groups[j]] != "#")
             ):
-                stack.append((i + groups[j] + 1, j + 1))
-            continue
+                return recurse(i + groups[j] + 1, j + 1)
+            return 0
 
-        if row[i] == "?":
-            if (
-                not "." in row[i:i+groups[j]] and
-                (i + groups[j] == len(row) or row[i+groups[j]] != "#")
-            ):
-                stack.append((i + groups[j] + 1, j + 1))
+        result = 0
+        if (
+            row[i] == "?" and
+            not "." in segment and
+            (i + groups[j] == len(row) or row[i+groups[j]] != "#")
+        ):           
+            result += recurse(i + groups[j] + 1, j + 1)
+        result += recurse(i + 1, j)
 
-        stack.append((i + 1, j))
+        return result
+    
+    return recurse(0, 0)
 
-    return arrangements
-
-def part1(damaged_rows, damaged_groups):
+def sum_arrangements(damaged_rows, damaged_groups, folds):
     arrangements_sum = 0
     for i in range(len(damaged_rows)):
         arrangements_sum += count_arrangements(
-            damaged_rows[i],
-            damaged_groups[i]
+            unfold_row(damaged_rows[i], folds),
+            unfold_groups(damaged_groups[i], folds)
         )
 
     return arrangements_sum
+
+def part1(damaged_rows, damaged_groups):
+    return sum_arrangements(damaged_rows, damaged_groups, 1)
+
+def part2(damaged_rows, damaged_groups):
+    return sum_arrangements(damaged_rows, damaged_groups, 5)
 
 if __name__ == "__main__":
     damaged_rows, damaged_groups = get_spring_records()
 
     print(f"part 1: {part1(damaged_rows, damaged_groups)}")
+    print(f"part 2: {part2(damaged_rows, damaged_groups)}")
