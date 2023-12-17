@@ -60,6 +60,40 @@
 
 # The light isn't energizing enough tiles to produce lava; to debug the contraption, you need to start by analyzing the current situation. With the beam starting in the top-left heading right, how many tiles end up being energized?
 
+# --- Part Two ---
+
+# As you try to work out what might be wrong, the reindeer tugs on your shirt and leads you to a nearby control panel. There, a collection of buttons lets you align the contraption so that the beam enters from any edge tile and heading away from that edge. (You can choose either of two directions for the beam if it starts on a corner; for instance, if the beam starts in the bottom-right corner, it can start heading either left or upward.)
+
+# So, the beam could start on any tile in the top row (heading downward), any tile in the bottom row (heading upward), any tile in the leftmost column (heading right), or any tile in the rightmost column (heading left). To produce lava, you need to find the configuration that energizes as many tiles as possible.
+
+# In the above example, this can be achieved by starting the beam in the fourth tile from the left in the top row:
+
+# .|<2<\....
+# |v-v\^....
+# .v.v.|->>>
+# .v.v.v^.|.
+# .v.v.v^...
+# .v.v.v^..\
+# .v.v/2\\..
+# <-2-/vv|..
+# .|<<<2-|.\
+# .v//.|.v..
+
+# Using this configuration, 51 tiles are energized:
+
+# .#####....
+# .#.#.#....
+# .#.#.#####
+# .#.#.##...
+# .#.#.##...
+# .#.#.##...
+# .#.#####..
+# ########..
+# .#######..
+# .#...#.#..
+
+# Find the initial beam configuration that energizes the largest number of tiles; how many tiles are energized in that configuration?
+
 
 import sys
 
@@ -72,7 +106,8 @@ def get_contraption():
 def get_next_beams(contraption, row, col, d):
     next_beams = []
 
-    if contraption[row][col] == "/":
+    tile = contraption[row][col]
+    if tile == "/":
         if d == 0:
             next_beams.append((row, col + 1, 1))
         elif d == 1:
@@ -81,7 +116,7 @@ def get_next_beams(contraption, row, col, d):
             next_beams.append((row, col - 1, 3))
         else:
             next_beams.append((row + 1, col, 2))
-    elif contraption[row][col] == "\\":
+    elif tile == "\\":
         if d == 0:
             next_beams.append((row, col - 1, 3))
         elif d == 1:
@@ -90,9 +125,9 @@ def get_next_beams(contraption, row, col, d):
             next_beams.append((row, col + 1, 1))
         else:
             next_beams.append((row - 1, col, 0))
-    elif contraption[row][col] == "|" and d in [1, 3]:
+    elif tile == "|" and d in [1, 3]:
         next_beams.extend([(row - 1, col, 0), (row + 1, col, 2)])
-    elif contraption[row][col] == "-" and d in [0, 2]:
+    elif tile == "-" and d in [0, 2]:
         next_beams.extend([(row, col - 1, 3), (row, col + 1, 1)])
     else:
         if d == 0: next_beams.append((row - 1, col, 0))
@@ -105,14 +140,14 @@ def get_next_beams(contraption, row, col, d):
         next_beams
     ))
 
-def part1(contraption):
+def energize_tiles(contraption, start):
     energized_tiles = [
         [
             [] for _ in range(len(contraption[0]))
         ] for __ in range(len(contraption))
     ]
 
-    stack = [(0, 0, 1)]
+    stack = [start]
     while stack:
         row, col, d = stack.pop()
         
@@ -125,12 +160,33 @@ def part1(contraption):
     num_energized = 0
     for row in energized_tiles:
         for tile in row:
-            if tile:                
-                num_energized += 1
+            if tile: num_energized += 1
 
     return num_energized
+
+def generate_starts(contraption):
+    starts = []
+
+    for row in range(len(contraption)):
+        starts.append((row, 0, 1))
+        starts.append((row, len(contraption[row]) - 1, 1))
+
+    for col in range(len(contraption[0])):
+        starts.append((0, col, 2))
+        starts.append((len(contraption) - 1, col, 0))
+
+    return starts
+
+def part1(contraption):
+    start = (0, 0, 1)
+    return energize_tiles(contraption, start)
+
+def part2(contraption):
+    starts = generate_starts(contraption)
+    return max(map(lambda x: energize_tiles(contraption, x), starts))
 
 if __name__ == "__main__":
     contraption = get_contraption()
 
     print(f"part 1: {part1(contraption)}")
+    print(f"part 2: {part2(contraption)}")
