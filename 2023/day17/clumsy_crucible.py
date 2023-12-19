@@ -52,6 +52,52 @@
 
 # Directing the crucible from the lava pool to the machine parts factory, but not moving more than three consecutive blocks in the same direction, what is the least heat loss it can incur?
 
+# --- Part Two ---
+
+# The crucibles of lava simply aren't large enough to provide an adequate supply of lava to the machine parts factory. Instead, the Elves are going to upgrade to ultra crucibles.
+
+# Ultra crucibles are even more difficult to steer than normal crucibles. Not only do they have trouble going in a straight line, but they also have trouble turning!
+
+# Once an ultra crucible starts moving in a direction, it needs to move a minimum of four blocks in that direction before it can turn (or even before it can stop at the end). However, it will eventually start to get wobbly: an ultra crucible can move a maximum of ten consecutive blocks without turning.
+
+# In the above example, an ultra crucible could follow this path to minimize heat loss:
+
+# 2>>>>>>>>1323
+# 32154535v5623
+# 32552456v4254
+# 34465858v5452
+# 45466578v>>>>
+# 143859879845v
+# 445787698776v
+# 363787797965v
+# 465496798688v
+# 456467998645v
+# 122468686556v
+# 254654888773v
+# 432267465553v
+
+# In the above example, an ultra crucible would incur the minimum possible heat loss of 94.
+
+# Here's another example:
+
+# 111111111111
+# 999999999991
+# 999999999991
+# 999999999991
+# 999999999991
+
+# Sadly, an ultra crucible would need to take an unfortunate path like this one:
+
+# 1>>>>>>>1111
+# 9999999v9991
+# 9999999v9991
+# 9999999v9991
+# 9999999v>>>>
+
+# This route causes the ultra crucible to incur the minimum possible heat loss of 71.
+
+# Directing the ultra crucible from the lava pool to the machine parts factory, what is the least heat loss it can incur?
+
 
 import heapq
 import sys
@@ -66,16 +112,17 @@ def get_city_map():
 
     return city_map
 
-def part1(city_map):
+def navigate_city(city_map, min_straight, max_straight):
     history = [
         [
             [
-                [False] * 3 for __ in range(4)
+                [False] * max_straight for __ in range(4)
             ] for ___ in range(len(city_map[0]))
         ] for ____ in range(len(city_map))
     ]
 
     heap = [[0, 0, 0, 0, 0]]
+
     while heap:
         loss, row, col, direction, times = heapq.heappop(heap)
 
@@ -86,14 +133,21 @@ def part1(city_map):
 
         history[row][col][direction][times-1] = True
         
-        if direction != 2 and not (direction == 0 and times >= 3):
-            next_row = row - 1
-            next_times = times + 1 if direction == 0 else 1
+        if (
+            direction != 2
+            and not (direction == 0 and times >= max_straight)
+        ):
+            next_row = row - (1 if direction == 0 else min_straight)
+            next_times = times + 1 if direction == 0 else min_straight
             if next_row >= 0 and not history[next_row][col][0][next_times-1]:
+                next_loss = loss
+                for i in range(next_row, row):
+                    next_loss += city_map[i][col]
+
                 heapq.heappush(
                     heap,
                     [
-                        loss + city_map[next_row][col],
+                        next_loss,
                         next_row,
                         col,
                         0,
@@ -101,17 +155,22 @@ def part1(city_map):
                     ]
                 )
 
-        if direction != 3 and not (direction == 1 and times >= 3):
-            next_col = col + 1
-            next_times = times + 1 if direction == 1 else 1
+        if (
+            direction != 3
+            and not (direction == 1 and times >= max_straight)            
+        ):
+            next_col = col + (1 if direction == 1 else min_straight)
+            next_times = times + 1 if direction == 1 else min_straight
             if (
                 next_col < len(city_map[row]) and
                 not history[row][next_col][1][next_times-1]
             ):
+                next_loss = loss + sum(city_map[row][col+1:next_col+1])
+
                 heapq.heappush(
                     heap,
                     [
-                        loss + city_map[row][next_col],
+                        next_loss,
                         row,
                         next_col,
                         1,
@@ -119,17 +178,24 @@ def part1(city_map):
                     ]
                 )
 
-        if direction != 0 and not (direction == 2 and times >= 3):
-            next_row = row + 1
-            next_times = times + 1 if direction == 2 else 1
+        if (
+            direction != 0
+            and not (direction == 2 and times >= max_straight)            
+        ):
+            next_row = row + (1 if direction == 2 else min_straight)
+            next_times = times + 1 if direction == 2 else min_straight
             if (
                 next_row < len(city_map) and
                 not history[next_row][col][2][next_times-1]
             ):
+                next_loss = loss
+                for i in range(row + 1, next_row + 1):
+                    next_loss += city_map[i][col]
+
                 heapq.heappush(
                     heap,
                     [
-                        loss + city_map[next_row][col],
+                        next_loss,
                         next_row,
                         col,
                         2,
@@ -137,13 +203,19 @@ def part1(city_map):
                     ]
                 )
 
-        if direction != 1 and not (direction == 3 and times >= 3):
-            next_col = col - 1
+        if (
+            direction != 1
+            and not (direction == 3 and times >= max_straight)            
+        ):
+            next_col = col - (1 if direction == 3 else min_straight)
+            next_times = times + 1 if direction == 3 else min_straight
             if next_col >= 0 and not history[row][next_col][3][next_times-1]:
+                next_loss = loss + sum(city_map[row][next_col:col])
+
                 heapq.heappush(
                     heap,
                     [
-                        loss + city_map[row][next_col],
+                        next_loss,
                         row,
                         next_col,
                         3,
@@ -151,7 +223,14 @@ def part1(city_map):
                     ]
                 )
 
+def part1(city_map):
+    return navigate_city(city_map, 1, 3)
+
+def part2(city_map):
+    return navigate_city(city_map, 4, 10)
+
 if __name__ == "__main__":
     city_map = get_city_map()
 
     print(f"part 1: {part1(city_map)}")
+    print(f"part 2: {part2(city_map)}")
