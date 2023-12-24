@@ -54,20 +54,31 @@
 
 # Sort through all of the parts you've been given; what do you get if you add together all of the rating numbers for all of the parts that ultimately get accepted?
 
+# --- Part Two ---
 
+# Even with your help, the sorting process still isn't fast enough.
+
+# One of the Elves comes up with a new plan: rather than sort parts individually through all of these workflows, maybe you can figure out in advance which combinations of ratings will be accepted or rejected.
+
+# Each of the four ratings (x, m, a, s) can have an integer value ranging from a minimum of 1 to a maximum of 4000. Of all possible distinct combinations of ratings, your job is to figure out which ones will be accepted.
+
+# In the above example, there are 167409079868000 distinct combinations of ratings that will be accepted.
+
+# Consider only your list of workflows; the list of part ratings that the Elves wanted you to sort is no longer relevant. How many distinct combinations of ratings will be accepted by the Elves' workflows?
+
+
+from functools import reduce
 import sys
 
 sys.path.append(".")
 from util import get_input
 
 class PartProcessor:
-    def __init__(self, written_workflows):
+    def __init__(self, workflows):
         self.workflows = {}
 
-        for written_workflow in written_workflows:
-            key, written_rules = written_workflow[:-1].split("{")
-            rules = written_rules.split(",")
-            
+        for key in workflows:
+            rules = workflows[key]
             self.workflows[key] = self._generate_workflow(rules)
 
     def _generate_workflow(self, rules):
@@ -105,10 +116,12 @@ class PartProcessor:
 def get_workflows_and_parts():
     lines = get_input("2023/day19/input.txt")
 
-    workflows = []
+    workflows = {}
     for i in range(len(lines)):
         if not lines[i]: break
-        workflows.append(lines[i])
+
+        key, rules = lines[i][:-1].split("{")
+        workflows[key] = rules.split(",")
 
     parts = []
     for j in range(i + 1, len(lines)):
@@ -120,7 +133,71 @@ def get_workflows_and_parts():
 
     return workflows, parts
 
+def get_accepted_part_ranges(workflows):
+    accepted = []
+    stack = [
+        [
+            "in",
+            { "x": (1, 4000), "m": (1, 4000), "a": (1, 4000), "s": (1, 4000) }
+        ]
+    ]
+    while stack:
+        key, part = stack.pop()
+
+        for rule in workflows[key]:
+            if not ":" in rule:
+                if rule == "R": pass
+                elif rule == "A": accepted.append(part)
+                else: stack.append([rule, part])
+                continue
+
+            condition, result = rule.split(":")
+
+            if "<" in condition:
+                category, val = condition.split("<")
+                cat_range = part[category]
+                if cat_range[0] < int(val):
+                    if result != "R":
+                        a = dict(part)
+                        a[category] = (
+                            cat_range[0],
+                            min(cat_range[1], int(val) - 1)
+                        )
+
+                        if result == "A":
+                            accepted.append(a)
+                        else:
+                            stack.append([result, a])
+
+                    if cat_range[1] >= int(val):
+                        part[category] = (int(val), cat_range[1])
+                    else:
+                        break
+            elif ">" in condition:
+                category, val = condition.split(">")
+                cat_range = part[category]
+                if cat_range[1] > int(val):
+                    if result != "R":
+                        a = dict(part)
+                        a[category] = (
+                            max(cat_range[0], int(val) + 1),
+                            cat_range[1]
+                        )
+
+                        if result == "A":
+                            accepted.append(a)
+                        else:
+                            stack.append([result, a])
+
+                    if cat_range[0] <= int(val):
+                        part[category] = (cat_range[0], int(val))
+                    else:
+                        break
+
+    return accepted
+
 def part1(part_processor, parts):
+    part_processor = PartProcessor(workflows)
     accepted = list(filter(part_processor.process, parts))
 
     accepted_sum = 0
@@ -130,8 +207,20 @@ def part1(part_processor, parts):
 
     return accepted_sum
 
-if __name__ == "__main__":
-    workflows, parts = get_workflows_and_parts()
-    part_processor = PartProcessor(workflows)
+def part2(workflows):
+    accepted = get_accepted_part_ranges(workflows)
+    
+    num_combinations = 0
+    for part in accepted:
+        x = 1
+        for cat_range in part.values():
+            x *= cat_range[1] - cat_range[0] + 1
+        num_combinations += x
 
-    print(f"part 1: {part1(part_processor, parts)}")
+    return num_combinations
+
+if __name__ == "__main__":
+    workflows, parts = get_workflows_and_parts()    
+
+    print(f"part 1: {part1(workflows, parts)}")
+    print(f"part 2: {part2(workflows)}")
