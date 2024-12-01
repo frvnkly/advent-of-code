@@ -163,6 +163,16 @@ class ConjunctionModule(Module):
 
         self.send(send_level)
 
+class Terminus(Module):
+
+    def __init__(self, label, destinations, network):
+        super().__init__(label, destinations, network)
+
+    def receive(self, pulse):
+        _, level = pulse
+        if level == 0:
+            self.network.terminated = True
+
 class Network:
 
     def __init__(self, modules):
@@ -170,6 +180,7 @@ class Network:
         self.pulses_queue = []
         self.low_counter = 0
         self.high_counter = 0
+        self.terminated = False
 
         labels = set()        
         for label, destinations in modules:
@@ -193,7 +204,7 @@ class Network:
 
         for label in labels:
             if not label in self.modules:
-                self.modules[label] = Module(label, [], self)
+                self.modules[label] = Terminus(label, [], self)
 
     def queue(self, destination, pulse):
         self.pulses_queue.append((destination, pulse))
@@ -232,7 +243,18 @@ def part1(modules):
 
     return network.low_counter * network.high_counter
 
+def part2(modules):
+    network = Network(modules)
+
+    presses = 0
+    while not network.terminated:
+        presses += 1
+        network.start()
+
+    return presses
+
 if __name__ == "__main__":
     modules = get_modules()
 
     print(f"part 1: {part1(modules)}")
+    print(f"part 2: {part2(modules)}")

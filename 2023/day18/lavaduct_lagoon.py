@@ -58,16 +58,18 @@ sys.path.append(".")
 from util import get_input
 
 def get_dig_plan():
-    dig_plan = []
+    instructions = []
+    colors = []
     for line in get_input("2023/day18/input.txt"):
         direction, meters, color = line.split()
-        dig_plan.append([direction, int(meters), color[1:-1]])
+        instructions.append([direction, int(meters)])
+        colors.append(color[2:-1])
 
-    return dig_plan
+    return instructions, colors
 
-def dig_outline(dig_plan):
+def dig_outline(instructions):
     coords = [(0, 0)]
-    for direction, meters, _ in dig_plan:
+    for direction, meters in instructions:
         if direction == "U":
             coords.append((coords[-1][0] - meters, coords[-1][1]))
         elif direction == "D":
@@ -140,17 +142,40 @@ def dig_interior(lagoon):
             if 0 <= r < len(lagoon) and 0 <= c < len(lagoon[r]):
                 stack.append((r, c))
 
-def part1(dig_plan):
-    lagoon = dig_outline(dig_plan)
+def dig_lagoon(instructions):
+    lagoon = dig_outline(instructions)
     dig_interior(lagoon)
 
+    return lagoon
+
+def get_lagoon_volume(lagoon):
     volume = 0
     for row in lagoon:
         volume += len(list(filter(lambda x: x == "#", row)))
 
     return volume
 
-if __name__ == "__main__":
-    dig_plan = get_dig_plan()
+def extract_instructions(colors):
+    instructions = []
 
-    print(f"part 1: {part1(dig_plan)}")
+    for color in colors:
+        direction = ["R", "D", "L", "U"][int(color[-1])]
+        meters = int(color[:-1], 16)
+        instructions.append((direction, meters))
+
+    return instructions    
+
+def part1(instructions):
+    lagoon = dig_lagoon(instructions)
+    return get_lagoon_volume(lagoon)
+
+def part2(colors):
+    instructions = extract_instructions(colors)
+    lagoon = dig_lagoon(instructions)
+    return get_lagoon_volume(lagoon)
+
+if __name__ == "__main__":
+    instructions, colors = get_dig_plan()
+
+    print(f"part 1: {part1(instructions)}")
+    print(f"part 2: {part2(colors)}")

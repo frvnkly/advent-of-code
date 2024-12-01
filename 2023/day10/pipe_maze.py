@@ -194,13 +194,60 @@ def get_loop_length(maze, start):
 
     return steps
 
-def part1(maze):
-    maze, start = get_maze()
-    loop_length = get_loop_length(maze, start)
+def simplify_maze(maze, start):
+    maze_copy = [[None] * len(maze[0]) for _ in range(len(maze))]
+    start_x, start_y = start
+    starting_direction = maze[start[0]][start[1]][0]
+    current = (start_x, start_y, starting_direction)
+    while True:
+        x, y, d = current
 
+        maze_copy[x][y] = maze[x][y]
+
+        for direction in maze[x][y]:
+            if direction != d:
+                next_direction = direction
+                break
+        
+        if next_direction == 0:
+            current = (x - 1, y, 2)
+        elif next_direction == 1:
+            current = (x, y + 1, 3)
+        elif next_direction == 2:
+            current = (x + 1, y, 0)
+        elif next_direction == 3:
+            current = (x, y - 1, 1)        
+
+        if current[0] == start_x and current[1] == start_y:
+            break
+
+    return maze_copy
+
+def count_enclosed_tiles(maze):
+    enclosed_tiles = 0
+    for i in range(len(maze)):
+        is_enclosed = False
+        for j in range(len(maze[i])):
+            if maze[i][j]:
+                if 0 in maze[i][j] or 2 in maze[i][j]:
+                    is_enclosed = not is_enclosed
+            else:
+                if is_enclosed:
+                    print(i, j)
+                    enclosed_tiles += 1
+    
+    return enclosed_tiles
+
+def part1(maze, start):
+    loop_length = get_loop_length(maze, start)
     return int(loop_length / 2)
 
-if __name__ == "__main__":
-    maze = get_input("2023/day10/input.txt")
+def part2(maze, start):
+    simplified_maze = simplify_maze(maze, start)
+    return count_enclosed_tiles(simplified_maze)
 
-    print(f"part 1: {part1(maze)}")
+if __name__ == "__main__":
+    maze, start = get_maze()
+
+    print(f"part 1: {part1(maze, start)}")
+    print(f"part 2: {part2(maze, start)}")

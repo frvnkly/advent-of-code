@@ -113,7 +113,8 @@ def part1(garden):
                 ):
                     next_plots.add((r, c))
 
-        plots = next_plots
+        print(len(next_plots) - len(plots))
+        plots = next_plots        
 
     return len(plots)
 
