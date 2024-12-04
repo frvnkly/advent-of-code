@@ -18,6 +18,27 @@
 
 # Scan the corrupted memory for uncorrupted mul instructions. What do you get if you add up all of the results of the multiplications?
 
+# --- Part Two ---
+
+# As you scan through the corrupted memory, you notice that some of the conditional statements are also still intact. If you handle some of the uncorrupted conditional statements in the program, you might be able to get an even more accurate result.
+
+# There are two new instructions you'll need to handle:
+
+# The do() instruction enables future mul instructions.
+# The don't() instruction disables future mul instructions.
+
+# Only the most recent do() or don't() instruction applies. At the beginning of the program, mul instructions are enabled.
+
+# For example:
+
+# xmul(2,4)&mul[3,7]!^don't()_mul(5,5)+mul(32,64](mul(11,8)undo()?mul(8,5))
+
+# This corrupted memory is similar to the example from before, but this time the mul(5,5) and mul(11,8) instructions are disabled because there is a don't() instruction before them. The other mul instructions function normally, including the one at the end that gets re-enabled by a do() instruction.
+
+# This time, the sum of the results is 48 (2*4 + 8*5).
+
+# Handle the new instructions; what do you get if you add up all of the results of just the enabled multiplications?
+
 
 from functools import reduce
 import sys
@@ -25,40 +46,61 @@ import sys
 sys.path.append('.')
 from util import get_input
 
+def search(memory_line, s, i):
+    return i <= len(memory_line) - len(s) and memory_line[i:i + len(s)] == s
+
+def try_mul(memory_line, i):
+    if not search(memory_line, 'mul(', i):
+        return 0
+
+    start = i + 4
+    end = start
+    while end < len(memory_line):
+        if memory_line[end] == ')':
+            break
+        
+        if (
+            memory_line[end].isnumeric()
+            or (memory_line[end] == ',' and memory_line[end-1] != ',')
+        ):
+            end += 1
+            continue
+        
+        end = start
+        break
+    if start < end:
+        factors = list(map(int, memory_line[start:end].split(',')))                
+        if len(factors) > 1:
+            product = reduce(lambda a, b: a * b, factors)
+            return product
+    
+    return 0
+
 def part1(memory):
     mul_sum = 0
     for line in memory:
-        i = 0
-        while i < len(line) - 4:
-            if line[i:i+4] != 'mul(':
-                i += 1
-                continue
-            
-            start = i + 4
-            end = start
-            while end < len(line):
-                if line[end] == ')':
-                    break
-                
-                if (
-                    line[end].isnumeric()
-                    or (line[end] == ',' and line[end-1] != ',')
-                ):
-                    end += 1
-                    continue
-                
-                end = start
-                break
-            if start < end:
-                factors = list(map(int, line[start:end].split(',')))                
-                if len(factors) > 1:
-                    product = reduce(lambda a, b: a * b, factors)
-                    print(line[i:end + 1], factors, product)
-                    mul_sum += product
-            i = end + 1
+        for i in range(len(line)):
+            mul_sum += try_mul(line, i)
     
     print(f'part 1: {mul_sum}')
+
+def part2(memory):
+    mul_sum = 0
+    enabled = True
+    for line in memory:
+        for i in range(len(line)):
+            if enabled:
+                if search(line, "don't()", i):
+                    enabled = False
+                else:
+                    mul_sum += try_mul(line, i)
+            else:
+                if search(line, 'do()', i):
+                    enabled = True
+
+    print(f'part 2: {mul_sum}')
 
 if __name__ == '__main__':
     memory = get_input('2024/day3/input.txt')
     part1(memory)
+    part2(memory)
