@@ -40,6 +40,35 @@
 
 # Take a look at the little Elf's word search. How many times does XMAS appear?
 
+# --- Part Two ---
+
+# The Elf looks quizzically at you. Did you misunderstand the assignment?
+
+# Looking for the instructions, you flip over the word search to find that this isn't actually an XMAS puzzle; it's an X-MAS puzzle in which you're supposed to find two MAS in the shape of an X. One way to achieve that is like this:
+
+# M.S
+# .A.
+# M.S
+
+# Irrelevant characters have again been replaced with . in the above diagram. Within the X, each MAS can be written forwards or backwards.
+
+# Here's the same example from before, but this time all of the X-MASes have been kept instead:
+
+# .M.S......
+# ..A..MSMS.
+# .M.S.MAA..
+# ..A.ASMSM.
+# .M.S.M....
+# ..........
+# S.S.S.S.S.
+# .A.A.A.A..
+# M.M.M.M.M.
+# ..........
+
+# In this example, an X-MAS appears 9 times.
+
+# Flip the word search from the instructions back over to the word search side and try again. How many times does an X-MAS appear?
+
 
 import sys
 
@@ -73,6 +102,24 @@ def part1(word_search):
 
     print(f'part 1: {num_xmas}')
 
+def part2(word_search):
+    num_xmas = 0
+    for x in range(1, len(word_search) - 1):
+        for y in range(1, len(word_search) - 1):
+            if (
+                (
+                    search(word_search, x - 1, y - 1, 1, 1, 'MAS')
+                    or search(word_search, x - 1, y - 1, 1, 1, 'SAM')
+                ) and (
+                    search(word_search, x - 1, y + 1, 1, -1, 'MAS')
+                    or search(word_search, x - 1, y + 1, 1, -1, 'SAM')
+                )
+            ):
+                num_xmas += 1
+
+    print(f'part 2: {num_xmas}')
+
 if __name__ == '__main__':
     word_search = get_input('2024/day4/input.txt')
     part1(word_search)
+    part2(word_search)
