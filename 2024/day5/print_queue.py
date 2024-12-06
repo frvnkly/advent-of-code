@@ -77,6 +77,20 @@
 
 # Determine which updates are already in the correct order. What do you get if you add up the middle page number from those correctly-ordered updates?
 
+# --- Part Two ---
+
+# While the Elves get to work printing the correctly-ordered updates, you have a little time to fix the rest of them.
+
+# For each of the incorrectly-ordered updates, use the page ordering rules to put the page numbers in the right order. For the above example, here are the three incorrectly-ordered updates and their correct orderings:
+
+# 75,97,47,61,53 becomes 97,75,47,61,53.
+# 61,13,29 becomes 61,29,13.
+# 97,13,75,29,47 becomes 97,75,47,29,13.
+
+# After taking only the incorrectly-ordered updates and ordering them correctly, their middle page numbers are 47, 29, and 47. Adding these together produces 123.
+
+# Find the updates which are not in the correct order. What do you get if you add up the middle page numbers after correctly ordering just those updates?
+
 
 import sys
 
@@ -111,6 +125,42 @@ def validate_update(update, rules):
         printed_pages.add(page)
     return True
 
+def fix_update(update, rules):
+    requirements = {}
+    for before, after in rules:
+        if before in update and after in update:
+            if after in requirements:
+                requirements[after].append(before)
+            else:
+                requirements[after] = [before]
+
+    fixed_update = []    
+    floaters = []
+    for page in update:
+        if not page in requirements:
+            floaters.append(page)
+            continue
+
+        stack = [(page, 0)]
+        while stack:
+            p, seen = stack.pop()
+
+            if p in fixed_update:
+                continue
+                
+            if seen:
+                fixed_update.append(p)
+            else:
+                stack.append((p, 1))
+                for r in requirements.get(p, []):
+                    stack.append((r, 0))
+    
+    for floater in floaters:
+        if not floater in fixed_update:
+            fixed_update.append(floater)
+
+    return fixed_update
+
 def part1(rules, updates):
     middle_pages_sum = 0
     for update in updates:
@@ -119,6 +169,16 @@ def part1(rules, updates):
 
     print(f'part 1: {middle_pages_sum}')
 
+def part2(rules, updates):
+    middle_pages_sum = 0
+    for update in updates:
+        if not validate_update(update, rules):
+            fixed_update = fix_update(update, rules)
+            middle_pages_sum += fixed_update[len(fixed_update) // 2]
+
+    print(f'part 2: {middle_pages_sum}')
+
 if __name__ == '__main__':
     rules, updates = get_rules_and_updates()
     part1(rules, updates)
+    part2(rules, updates)
