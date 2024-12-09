@@ -79,6 +79,46 @@
 
 # Calculate the impact of the signal. How many unique locations within the bounds of the map contain an antinode?
 
+# --- Part Two ---
+
+# Watching over your shoulder as you work, one of The Historians asks if you took the effects of resonant harmonics into your calculations.
+
+# Whoops!
+
+# After updating your model, it turns out that an antinode occurs at any grid position exactly in line with at least two antennas of the same frequency, regardless of distance. This means that some of the new antinodes will occur at the position of each antenna (unless that antenna is the only one of its frequency).
+
+# So, these three T-frequency antennas now create many antinodes:
+
+# T....#....
+# ...T......
+# .T....#...
+# .........#
+# ..#.......
+# ..........
+# ...#......
+# ..........
+# ....#.....
+# ..........
+
+# In fact, the three T-frequency antennas are all exactly in line with two antennas, so they are all also antinodes! This brings the total number of antinodes in the above example to 9.
+
+# The original example now has 34 antinodes, including the antinodes that appear on every antenna:
+
+# ##....#....#
+# .#.#....0...
+# ..#.#0....#.
+# ..##...0....
+# ....0....#..
+# .#...#A....#
+# ...#..#.....
+# #....#.#....
+# ..#.....A...
+# ....#....A..
+# .#........#.
+# ...#......##
+
+# Calculate the impact of the signal using this updated model. How many unique locations within the bounds of the map contain an antinode?
+
 
 import sys
 
@@ -96,7 +136,7 @@ def locate_antennae(city_map):
                     antennae[city_map[i][j]] = [(i, j)]
     return antennae
 
-def locate_antinodes(antennae):
+def locate_antinodes(city_map, antennae, include_antennae=False, limit=float('inf')):
     antinodes = set()
     for antenna_group in antennae.values():
         for i in range(len(antenna_group) - 1):
@@ -106,20 +146,41 @@ def locate_antinodes(antennae):
 
                 dx = b[0] - a[0]
                 dy = b[1] - a[1]
-                antinodes.add((a[0] - dx, a[1] - dy))
-                antinodes.add((b[0] + dx, b[1] + dy))
+
+                if include_antennae:
+                    antinodes.add(a)
+                    antinodes.add(b)
+
+                directions = [1, -1]
+                for d in directions:
+                    count = 0
+                    antinode = a
+                    while count < limit:
+                        antinode = (antinode[0] + dx * d, antinode[1] + dy * d)
+
+                        if antinode == a or antinode == b:
+                            continue
+
+                        if (
+                            not 0 <= antinode[0] < len(city_map)
+                            or not 0 <= antinode[1] < len(city_map[antinode[0]])
+                        ):
+                            break
+
+                        antinodes.add(antinode)
+                        count += 1
     return list(antinodes)
 
-def part1(city_map):
-    antennae = locate_antennae(city_map)
-    antinodes = locate_antinodes(antennae)
-    valid_antinodes = list(filter(
-        lambda x: 0 <= x[0] < len(city_map) and 0 <= x[1] < len(city_map[1]),
-        antinodes
-    ))
-    
-    print(f'part 1: {len(valid_antinodes)}')
+def part1(city_map, antennae):
+    antinodes = locate_antinodes(city_map, antennae, limit=1)    
+    print(f'part 1: {len(antinodes)}')
+
+def part2(city_map, antennae):
+    antinodes = locate_antinodes(city_map, antennae, include_antennae=True)
+    print(f'part 2: {len(antinodes)}')
 
 if __name__ == '__main__':
     city_map = list(map(list, get_input('2024/day8/input.txt')))
-    part1(city_map)
+    antennae = locate_antennae(city_map)
+    part1(city_map, antennae)
+    part2(city_map, antennae)
